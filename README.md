@@ -1,4 +1,4 @@
 suboptimal
 ==========
 
-Finds sometimes-optional routes for city subway systems
+Finds sometimes-optimal routes for city subway systems
