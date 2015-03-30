@@ -35,9 +35,10 @@ cdef tuple astar(Graph g, Vertex start, Vertex goal):
 			tentative_g_score = g_score[current] + g.distance(current,neighbor)
 			current_lines[neighbor] = current.paths[neighbor].lines.intersection(current_lines[current]) # At the transfer, can I stay on the same line?
 			if not current_lines[neighbor]: # If not, penalize the g score by an approximate 5 minute transfer time
-				#print("Had to transfer at %s" % current.name)
+				
 				tentative_g_score += 5
-				current_lines[neighbor] = neighbor.lines # And reset the available lines
+				current_lines[neighbor] = current.lines.intersection(current.paths[neighbor].lines) # And reset the available lines
+				#print("Had to transfer at %s to get to %s, new current lines is %s" % (current.name, neighbor.name, current_lines[neighbor]))
 
 			if neighbor not in openset or tentative_g_score < g_score[neighbor]:
 				came_from[neighbor] = current
