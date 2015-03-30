@@ -1,4 +1,5 @@
 from graph cimport *
+from libc.math cimport sqrt
 
 cdef list reconstruct_path(dict came_from, Vertex current):
 	total_path = [current]
@@ -58,12 +59,14 @@ cdef list best_edges(Graph g, int n = 2):
 	cdef Vertex edge
 	cdef double closest_distance
 
+	print('Best hubs: %s' % hubs)
+
 	for edge in edges:
 		closest_distance = list(edge.paths.values())[0].distance
-		scores[edge] = closest_distance*0.7 - sum([(astar(g,edge,hub)[1]-closest_distance)*len(hub.paths) for hub in hubs])*0.3 # Make this significantly less bad
+		scores[edge] = closest_distance*0.8 - sqrt(sum([(astar(g,edge,hub)[1]-closest_distance)*len(hub.paths) for hub in hubs]))*0.2 # Make this significantly less bad
 		print("Score for edge %s is %f" % (edge.name, scores[edge]))
 
-	return sorted(edges, key=lambda v:scores[v])[:n]
+	return sorted(edges, key=lambda v:scores[v])[::-1][:n]
 
 def do_best_edges(g,n=2):
 	return best_edges(g,n)

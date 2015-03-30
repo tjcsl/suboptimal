@@ -76,7 +76,7 @@ cdef class Graph:
 		return [p.destination for p in v.paths.values()]
 
 	cdef list hubs(Graph self, int n = 3):
-		return sorted(self.vertices, key=lambda v:len(v.paths))[:n]
+		return sorted(self.vertices, key=lambda v:len(v.paths))[::-1][:n]
 
 	cpdef double sph_distance(Graph self, Vertex v1, Vertex v2):
 		return 6371.0 * acos(sin(v1.latitude)*sin(v2.latitude) + cos(v1.latitude)*cos(v2.latitude)*cos(fabs(v1.longitude-v2.longitude))) # Great-circle distance
