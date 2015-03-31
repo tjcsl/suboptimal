@@ -5,6 +5,24 @@ import math
 def rd(deg):
 	return math.radians(deg)
 
+def calculate_headway_times():
+	lines = {'RD': (6, 12, 6, 8, 16.5),
+		'OR': (6, 12, 6, 12, 20),
+		'SV': (6, 12, 6, 12, 20),
+		'YL': (6, 12, 6, 12, 20),
+		'GR': (6, 12, 6, 12, 20),
+		'BL': (12, 12, 12, 12, 20)} # AM Rush, Midday, PM Rush, Evening, Late Night
+	headway_times = {}
+	hrs_amrush = 4.5
+	hrs_midday = 5.5
+	hrs_pmrush = 4
+	hrs_evening = 2.5
+	hrs_latenight = 2.5 # Only go to midnight
+	for line in lines:
+		headway_times[line+'_A'] = (lines[line][0]*hrs_amrush + lines[line][1]*hrs_midday + lines[line][2]*hrs_pmrush + lines[line][3]*hrs_evening + lines[line][4]*hrs_latenight) / (hrs_amrush+hrs_midday+hrs_pmrush+hrs_evening+hrs_latenight)
+		headway_times[line+'_B'] = headway_times[line+'_A']
+	return headway_times
+
 def create_basic_graph():
 	g = Graph()
 	v1 = g.add_vertex("Fort Totten", rd(38.9518467675), rd(-77.0022030768), {'RD','GR','YL'}) # RD: B06, other: E06
@@ -18,10 +36,15 @@ def create_basic_graph():
 	v9 = g.add_vertex("Branch Ave", rd(38.8264463483), rd(-76.9114642177), {'GR'}) # F11
 	v10 = g.add_vertex("Greenbelt", rd(39.0111458605), rd(-76.9110575731), {'GR','YL'}) # E10
 	v11 = g.add_vertex("Rosslyn", rd(38.8959790962), rd(-77.0709086853), {'BL','OR','SV'}) # C05
+	v12 = g.add_vertex("Columbia Heights", rd(38.9278379675), rd(-77.0325521177), {'GR','YL'}) # E04
+	v13 = g.add_vertex("Rhode Island Ave", rd(38.9210596891), rd(-76.9959369166), {'RD'}) # B04
 
-
-	g.connect(v1,v2,13,{'GR','YL','RD'},'ba')
-	g.connect(v4,v2,3,{'GR','YL'},'ba')
+	#g.connect(v1,v2,13,{'GR','YL','RD'},'ba')
+	#g.connect(v4,v2,3,{'GR','YL'},'ba')
+	g.connect(v2,v13,8,{'RD'},'ba')
+	g.connect(v13,v1,5,{'RD'},'ba')
+	g.connect(v2,v12,7,{'GR','YL'},'ba')
+	g.connect(v12,v1,6,{'GR','YL'},'ba')
 	g.connect(v3,v2,2,{'RD'},'ba')
 	g.connect(v4,v5,9,{'OR','SV','BL'},'ba')
 	g.connect(v3,v4,5,{'OR','SV','BL'},'ba')
@@ -38,6 +61,10 @@ def create_basic_graph():
 def main():
 	g = create_basic_graph()
 	print_connections(g)
-	print("Best edges: %s" % do_best_edges(g))
+	edges = do_best_edges(g,headway_times=calculate_headway_times())
+	print("Best edges: %s" % edges)
+
+	print("Doing TSP...")
+	print(do_do_tsp(g,headway_times=calculate_headway_times()))
 
 main()

@@ -25,15 +25,24 @@ cdef class Vertex:
 	def __richcmp__(Vertex v1, Vertex v2, int op):
 		if op == 2:
 			return hash(v1) == hash(v2)
+		elif op == 3:
+			return hash(v1) != hash(v2)
 
 		raise NotImplementedError("Vertex __richcmp__ opcode %d" % op)
 
 cdef class Path:
-	def __cinit__(self, Vertex source, Vertex destination, double distance, set lines):
+	def __cinit__(self, long id, Vertex source, Vertex destination, double distance, set lines):
 		self.destination = destination
 		self.distance = distance
 		self.source = source
 		self.lines = lines
+		self.id = id
+
+	def __hash__(Vertex self):
+		return self.id
+
+	def __repr__(Vertex self):
+		return "%s -> %s" % (self.source,self.destination)
 
 cdef class Graph:
 	def add_vertex(self, name="N/A", latitude=0.0, longitude=0.0, lines={"N/A"}):
@@ -60,8 +69,11 @@ cdef class Graph:
 			new_line1.add(line+first_direction)
 			new_line2.add(line+second_direction)
 
-		path1 = Path(v1, v2, distance, new_line1)
-		path2 = Path(v2, v1, distance, new_line2)
+		path1 = Path(self.max_path_id, v1, v2, distance, new_line1)
+		path2 = Path(self.max_path_id + 1, v2, v1, distance, new_line2)
+		path1.otherdir = path2
+		path2.otherdir = path1
+		self.max_path_id += 2
 		v1.add_path(path1)
 		v2.add_path(path2)
 
@@ -71,6 +83,17 @@ cdef class Graph:
 				return vertex
 
 		return None
+
+	cdef set paths(Graph self):
+		cdef set allpaths = set()
+		cdef Vertex vertex
+		cdef Path path
+
+		for vertex in self.vertices:
+			for path in vertex.paths.values():
+				allpaths.add(path)
+
+		return allpaths
 
 	cdef list neighbors(Graph self, Vertex v):
 		return [p.destination for p in v.paths.values()]
@@ -94,3 +117,4 @@ cdef class Graph:
 	def __cinit__(self):
 		self.vertices = []
 		self.max_id = 0
+		self.max_path_id = 0
