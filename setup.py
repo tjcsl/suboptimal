@@ -8,7 +8,9 @@ ext_modules = [
 		libraries = ["m"]),
 	Extension("graph",
 		sources = ["graph.pyx"],
-		libraries = ["m"])
+		libraries = ["m"]),
+	Extension("gtfs",
+		sources = ["gtfs.pyx"])
 ]
 
 setup(

@@ -1,17 +1,22 @@
 from graph import *
 from tsp import *
+from gtfs import *
 import math
+import pygtfs
+import os.path
+import copy
+import pprint
 
 def rd(deg):
 	return math.radians(deg)
 
 def calculate_headway_times():
-	lines = {'RD': (6, 12, 6, 8, 16.5),
-		'OR': (6, 12, 6, 12, 20),
-		'SV': (6, 12, 6, 12, 20),
-		'YL': (6, 12, 6, 12, 20),
-		'GR': (6, 12, 6, 12, 20),
-		'BL': (12, 12, 12, 12, 20)} # AM Rush, Midday, PM Rush, Evening, Late Night
+	lines = {'Red': (6, 12, 6, 8, 16.5),
+		'Orange': (6, 12, 6, 12, 20),
+		'Silver': (6, 12, 6, 12, 20),
+		'Yellow': (6, 12, 6, 12, 20),
+		'Green': (6, 12, 6, 12, 20),
+		'Blue': (12, 12, 12, 12, 20)} # AM Rush, Midday, PM Rush, Evening, Late Night
 	headway_times = {}
 	hrs_amrush = 4.5
 	hrs_midday = 5.5
@@ -58,13 +63,16 @@ def create_basic_graph():
 
 	return g
 
-def main():
-	g = create_basic_graph()
-	print_connections(g)
-	edges = do_best_edges(g,headway_times=calculate_headway_times())
-	print("Best edges: %s" % edges)
 
+def main():
+	wmata = load_database("wmata.zip")
+	#g = create_basic_graph()
+	g = parse_from_gtfs(wmata, limit_lines = ['RED','SILVER','BLUE','GREEN','ORANGE','YELLOW'])
+	print_connections(g)
+	#edges = do_best_edges(g,headway_times=calculate_headway_times())
+	#print("Best edges: %s" % edges)
 	print("Doing TSP...")
 	print(do_do_tsp(g,headway_times=calculate_headway_times()))
 
-main()
+if __name__ == '__main__':
+	main()

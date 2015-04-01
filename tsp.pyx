@@ -66,7 +66,7 @@ def do_astar(g,v1,v2,headway_times={}):
 	return astar(g,v1,v2,headway_times)
 
 cdef list best_edges(Graph g, int n=2, dict headway_times={}):
-	cdef list edges	= g.vertices, hubs = g.hubs(), shortest_path
+	cdef list edges	= g.vertices, hubs = g.hubs(4), shortest_path
 	cdef dict scores = {}
 	cdef Vertex edge
 	cdef Path p
@@ -95,7 +95,7 @@ cpdef void print_connections(Graph g):
 
 	for v in g.vertices:
 		for p in v.paths.values():
-			print('%s -> %s (dist: %d)' % (v.name, p.destination.name, p.distance))
+			print('%s -> %s (dist: %d, lines %s)' % (v.name, p.destination.name, p.distance, p.lines))
 
 cdef list find_initial_traversal(Graph g, Vertex start, Vertex end, dict headway_times = {}):
 	cdef set closedset = set(), openset = g.paths(), backupset
@@ -107,7 +107,7 @@ cdef list find_initial_traversal(Graph g, Vertex start, Vertex end, dict headway
 	cdef double minlen
 	cdef int i
 
-	while current != end and openset:
+	while (current != end) or openset:
 		next = False
 		backupset = set()
 		#print(current,path,openset,closedset)
@@ -135,7 +135,7 @@ cdef list find_initial_traversal(Graph g, Vertex start, Vertex end, dict headway
 		if next:
 			continue
 		else:
-			if backupset: # The only one left is the end
+			if backupset and backupset == openset: # The only one left is the end
 				#print("I'm forced to go to the end :( 1")
 				p = list(backupset)[0]
 				current = p.destination
@@ -181,8 +181,40 @@ cdef list find_initial_traversal(Graph g, Vertex start, Vertex end, dict headway
 def do_init_traverse(g, start, end, headway_times={}):
 	return find_initial_traversal(g,start,end,headway_times)
 
+cdef double calculate_time(Graph g, list path, headway_times={}):
+	cdef double time = 0, transfer_time
+	cdef set current_lines = path[0].lines
+	cdef int i
+	cdef Path p
+	cdef Vertex current
+	cdef str line
+
+	for i in range(len(path)-1):
+		#print(current_lines)
+		current = path[i]
+		p = current.paths[path[i+1]]
+		current_lines = current_lines.intersection(p.lines)
+		transfer_time = 0
+		if not current_lines:
+			print("Transfering %s -> %s" % (p.source, p.destination))
+			for line in p.lines:
+				if line not in headway_times:
+					print("WARN: line %s not in headway_times DB - for more accurate transfer timing, supply a headway_times dict with line to average transfer time mapping" % line)
+					transfer_time += 5
+					continue
+
+				transfer_time += headway_times[line]/2
+
+			transfer_time /= len(p.lines)
+			current_lines = p.lines
+
+		time += p.distance + transfer_time
+		print("%s -> %s took %f" % (p.source, p.destination, p.distance + transfer_time))
+
+	return time
+
 cdef list do_tsp(g, headway_times = {}):
-	cdef list edges = best_edges(g,n=2,headway_times=headway_times)
+	cdef list edges = best_edges(g,n=3,headway_times=headway_times)
 	cdef tuple startend
 	cdef list initial_population = []
 
@@ -191,7 +223,8 @@ cdef list do_tsp(g, headway_times = {}):
 	for startend in itertools.permutations(edges,2):
 		initial_population.append(find_initial_traversal(g, startend[0], startend[1], headway_times=headway_times))
 
-	print(initial_population)
+	for pop in initial_population:
+		print("Path with time %f: %s" % (calculate_time(g,pop,headway_times)/60.0,pop))
 
 def do_do_tsp(g, headway_times = {}):
 	return do_tsp(g,headway_times)
